@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Overview{% endblock %}
+{% block content %}
+{% macro act(csrf, uid, status, label, cls="") -%}
+<form method="post" action="/members/set" class="inline">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <input type="hidden" name="user_id" value="{{ uid }}">
+  <input type="hidden" name="status" value="{{ status }}">
+  <button class="btn {{ cls }}">{{ label }}</button>
+</form>
+{%- endmacro %}
+
+<h1>Overview</h1>
+{% if flash %}<div class="flash">{{ flash }}</div>{% endif %}
+
+<div class="grid">
+  <div class="stat">
+    <div class="n"><span class="dot {{ 'on' if bot.online }}"></span>{{ 'Online' if bot.online else 'Offline' }}</div>
+    <div class="l">{{ bot.name }}{% if bot.ping is not none %} · {{ bot.ping }} ms{% endif %}</div>
+  </div>
+  <div class="stat"><div class="n">{{ servers|length }}</div><div class="l">Approved servers</div></div>
+  <div class="stat"><div class="n">{{ approved_count }}</div><div class="l">Approved members</div></div>
+  <div class="stat"><div class="n">{{ pending|length }}</div><div class="l">Waiting for approval</div></div>
+  <div class="stat"><div class="n">{{ gen24 }}</div><div class="l">Pictures (24h)</div></div>
+  <div class="stat"><div class="n">{{ jobs }}</div><div class="l">Active automations</div></div>
+</div>
+
+<div class="card">
+  <h2>⏳ Waiting for approval ({{ pending|length }})</h2>
+  {% if pending %}
+  <div class="scroll"><table>
+    <tr><th>Member</th><th>User ID</th><th>Requested ({{ tz }})</th><th>In server</th><th></th></tr>
+    {% for m in pending %}
+    <tr>
+      <td>{{ m.username or '—' }}</td>
+      <td class="mono">{{ m.user_id }}</td>
+      <td>{{ m.requested_at|local }}</td>
+      <td class="mono">{{ m.guild_id or '' }}</td>
+      <td>{{ act(csrf, m.user_id, 'approved', 'Approve', 'ok') }} {{ act(csrf, m.user_id, 'denied', 'Deny', 'bad') }}</td>
+    </tr>
+    {% endfor %}
+  </table></div>
+  {% else %}
+  <p class="muted">No requests. When someone in an approved server uses a command, they show up here.</p>
+  {% endif %}
+</div>
+
+<div class="card">
+  <h2>🖥️ Approved servers</h2>
+  <div class="scroll"><table>
+    <tr><th>Server ID</th><th>Name</th><th>Added ({{ tz }})</th><th></th></tr>
+    {% for s in servers %}
+    <tr>
+      <td class="mono">{{ s.guild_id }}</td>
+      <td>{{ s.name or '—' }}</td>
+      <td>{{ s.added_at|local }}</td>
+      <td>
+        <form method="post" action="/servers/remove" class="inline" onsubmit="return confirm('Remove this server? The bot will leave it.')">
+          <input type="hidden" name="csrf" value="{{ csrf }}">
+          <input type="hidden" name="guild_id" value="{{ s.guild_id }}">
+          <button class="btn bad">Remove</button>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4" class="muted">No servers yet. Add one below. The bot refuses to work anywhere else.</td></tr>
+    {% endfor %}
+  </table></div>
+  <form method="post" action="/servers/add" class="row" style="margin-top:12px">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <input type="text" name="guild_id" placeholder="Server ID" required inputmode="numeric">
+    <input type="text" name="name" placeholder="Label (optional)">
+    <button class="btn primary">Add server</button>
+  </form>
+  <p class="muted" style="margin-bottom:0">Discord: User Settings → Advanced → Developer Mode, then right-click the server icon → Copy Server ID.</p>
+</div>
+
+<div class="card">
+  <h2>👥 Members</h2>
+  <div class="scroll"><table>
+    <tr><th>Member</th><th>User ID</th><th>Status</th><th>Requested ({{ tz }})</th><th>Decided ({{ tz }})</th><th></th></tr>
+    {% for m in members %}
+    <tr>
+      <td>{{ m.username or '(not seen yet)' }}</td>
+      <td class="mono">{{ m.user_id }}</td>
+      <td><span class="badge {{ m.status }}">{{ m.status }}</span></td>
+      <td>{{ m.requested_at|local }}</td>
+      <td>{{ m.decided_at|local }}</td>
+      <td>
+        {% if m.status != 'approved' %}{{ act(csrf, m.user_id, 'approved', 'Approve', 'ok') }}{% endif %}
+        {% if m.status == 'approved' %}{{ act(csrf, m.user_id, 'denied', 'Revoke', 'bad') }}{% endif %}
+        {{ act(csrf, m.user_id, 'remove', 'Delete') }}
+        <a class="btn" href="/usage?period=all&user={{ m.user_id }}">Logs</a>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="6" class="muted">No members yet.</td></tr>
+    {% endfor %}
+  </table></div>
+  <form method="post" action="/members/set" class="row" style="margin-top:12px">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <input type="hidden" name="status" value="approved">
+    <input type="text" name="user_id" placeholder="User ID" required inputmode="numeric">
+    <input type="text" name="username" placeholder="Label (optional)">
+    <button class="btn primary">Pre-approve member</button>
+  </form>
+  <p class="muted" style="margin-bottom:0">Discord: right-click a person → Copy User ID (Developer Mode must be on).</p>
+</div>
+{% endblock %}

@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Usage report{% endblock %}
+{% block content %}
+<h1>Usage report</h1>
+
+<div class="tabs">
+  {% for key, label in periods %}
+  <a class="tab {{ 'on' if key == period }}" href="/usage?period={{ key }}{% if user %}&user={{ user }}{% endif %}">{{ label }}</a>
+  {% endfor %}
+  <a class="tab" href="/usage.csv?period={{ period }}{% if user %}&user={{ user }}{% endif %}" style="margin-left:auto">⬇ Export CSV</a>
+</div>
+
+<div class="card">
+  <h2>Per user</h2>
+  <div class="scroll"><table>
+    <tr>
+      <th>User</th><th>User ID</th><th>Total</th><th>OK</th><th>Errors</th><th>Denied</th>
+      <th>Avg time</th><th>First use ({{ tz }})</th><th>Last use ({{ tz }})</th><th></th>
+    </tr>
+    {% for r in summary %}
+    <tr>
+      <td>{{ r.username or '—' }}</td>
+      <td class="mono">{{ r.user_id }}</td>
+      <td><b>{{ r.total }}</b></td>
+      <td>{{ r.ok or 0 }}</td>
+      <td>{{ r.errors or 0 }}</td>
+      <td>{{ r.denied or 0 }}</td>
+      <td>{{ r.avg_ms|secs }}</td>
+      <td>{{ r.first|local }}</td>
+      <td>{{ r.last|local }}</td>
+      <td><a class="btn" href="/usage?period={{ period }}&user={{ r.user_id }}">Logs</a></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="10" class="muted">No activity in this period.</td></tr>
+    {% endfor %}
+  </table></div>
+</div>
+
+<div class="card">
+  <h2>
+    Recent log{% if user %} for user <span class="mono">{{ user }}</span>
+    <a class="btn" href="/usage?period={{ period }}">Show everyone</a>{% endif %}
+  </h2>
+  <p class="muted">Latest 200 entries. Times are in {{ tz }}.</p>
+  <div class="scroll"><table>
+    <tr><th>Time</th><th>User</th><th>Server</th><th>Command</th><th>Status</th><th>Took</th><th>Prompt / note</th></tr>
+    {% for r in logs %}
+    <tr>
+      <td>{{ r.ts|local }}</td>
+      <td>{{ r.username or r.user_id }}</td>
+      <td>{{ r.guild_name or r.guild_id or '' }}</td>
+      <td>{{ r.command }}</td>
+      <td><span class="badge {{ r.status }}">{{ r.status }}</span></td>
+      <td>{{ r.duration_ms|secs }}</td>
+      <td class="prompt">{{ r.prompt }}{% if r.error %} <span class="muted">({{ r.error }})</span>{% endif %}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="7" class="muted">Nothing logged yet.</td></tr>
+    {% endfor %}
+  </table></div>
+</div>
+{% endblock %}

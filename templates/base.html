@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Bot Panel{% endblock %}</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--text:#1b1f24;--muted:#6b7280;--line:#e5e7eb;--accent:#5865f2;--ok:#16a34a;--bad:#dc2626;--warn:#d97706}
+@media (prefers-color-scheme:dark){:root{--bg:#14161a;--card:#1c1f26;--text:#e7e9ee;--muted:#9aa3b2;--line:#2a2f3a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+.wrap{max-width:1100px;margin:0 auto;padding:16px}
+nav{display:flex;gap:16px;align-items:center;padding:12px 16px;background:var(--card);border-bottom:1px solid var(--line)}
+nav .brand{font-weight:700;margin-right:auto}
+nav a{color:var(--text);text-decoration:none;padding:4px 8px;border-radius:6px}
+nav a:hover{background:var(--line)}
+h1{font-size:22px;margin:8px 0 16px}
+h2{font-size:17px;margin:0 0 12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px}
+.stat .n{font-size:24px;font-weight:700}
+.stat .l{color:var(--muted);font-size:13px}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.03em}
+.muted{color:var(--muted)}
+.mono{font-family:ui-monospace,Consolas,monospace;font-size:13px}
+.btn{border:1px solid var(--line);background:var(--card);color:var(--text);padding:5px 10px;border-radius:6px;cursor:pointer;font:inherit;font-size:13px}
+.btn:hover{background:var(--line)}
+.btn.ok{background:var(--ok);border-color:var(--ok);color:#fff}
+.btn.bad{color:var(--bad);border-color:var(--bad)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+form.inline{display:inline}
+.badge{display:inline-block;padding:1px 8px;border-radius:999px;font-size:12px;font-weight:600;border:1px solid currentColor}
+.badge.approved,.badge.ok{color:var(--ok)}
+.badge.pending{color:var(--warn)}
+.badge.denied,.badge.error{color:var(--bad)}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;background:var(--bad)}
+.dot.on{background:var(--ok)}
+.flash{background:var(--card);border:1px solid var(--accent);border-radius:8px;padding:10px 14px;margin-bottom:16px}
+.err{color:var(--bad);margin:8px 0}
+input[type=text],input[type=password]{padding:7px 10px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--text);font:inherit;min-width:0}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.tab{padding:5px 12px;border-radius:999px;border:1px solid var(--line);color:var(--text);text-decoration:none;font-size:13px}
+.tab.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.prompt{max-width:380px;word-break:break-word}
+</style>
+</head>
+<body>
+{% if request.session.get('auth') %}
+<nav>
+  <span class="brand">🎨 Bot Panel</span>
+  <a href="/">Overview</a>
+  <a href="/usage">Usage report</a>
+  <form method="post" action="/logout" class="inline">
+    <input type="hidden" name="csrf" value="{{ request.session.get('csrf', '') }}">
+    <button class="btn">Log out</button>
+  </form>
+</nav>
+{% endif %}
+<div class="wrap">
+{% block content %}{% endblock %}
+</div>
+</body>
+</html>

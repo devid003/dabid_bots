@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Log in{% endblock %}
+{% block content %}
+<div class="card" style="max-width:380px;margin:80px auto">
+  <h1>🎨 Bot Panel</h1>
+  <form method="post" action="/login">
+    <div class="row">
+      <input type="password" name="password" placeholder="Admin password" autofocus required style="flex:1">
+      <button class="btn primary">Log in</button>
+    </div>
+    {% if error %}<div class="err">{{ error }}</div>{% endif %}
+  </form>
+</div>
+{% endblock %}
