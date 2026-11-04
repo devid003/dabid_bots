@@ -203,11 +203,42 @@ async def register(interaction: discord.Interaction):
 
 
 # ---------- commands ----------
-@bot.tree.command(name="imagine", description="Generate a picture from a prompt")
+@bot.tree.command(name="imagine", description="Generate a picture from text or TXT file")
 @app_commands.guild_only()
-@app_commands.describe(prompt="What should the picture show?")
+@app_commands.describe(
+    prompt="Direct prompt text (max 4,000 characters)",
+    prompt_file="Optional TXT prompt file (max 50,000 characters)"
+)
 @app_commands.checks.cooldown(1, 15.0, key=lambda i: (i.guild_id, i.user.id))
-async def imagine(interaction: discord.Interaction, prompt: app_commands.Range[str, 1, 1000]):
+async def imagine(
+    interaction: discord.Interaction,
+    prompt: str = None,
+    prompt_file: discord.Attachment = None,
+):
+    if prompt_file:
+        if not prompt_file.filename.lower().endswith(".txt"):
+            await interaction.response.send_message("Please upload a .txt file.", ephemeral=True)
+            return
+        try:
+            prompt = (await prompt_file.read()).decode("utf-8-sig")
+        except Exception:
+            await interaction.response.send_message("Cannot read TXT file. Please upload UTF-8 text.", ephemeral=True)
+            return
+        if len(prompt) > 50000:
+            await interaction.response.send_message("TXT prompt is too long. Maximum is 50,000 characters.", ephemeral=True)
+            return
+    elif prompt:
+        if len(prompt) > 4000:
+            await interaction.response.send_message("Direct prompt is too long. Maximum is 4,000 characters.", ephemeral=True)
+            return
+    else:
+        await interaction.response.send_message("Enter a prompt or upload a TXT file.", ephemeral=True)
+        return
+
+    if not prompt.strip():
+        await interaction.response.send_message("Prompt is empty.", ephemeral=True)
+        return
+
     uid = interaction.user.id
     if DAILY_LIMIT and uid not in OWNER_IDS:
         used = await run(db.count_recent_ok, uid, 24)
@@ -228,7 +259,10 @@ async def imagine(interaction: discord.Interaction, prompt: app_commands.Range[s
         await interaction.followup.send(f"Generation failed{reason}. Please try again in a moment.")
         return
 
-    await interaction.followup.send(f"**Prompt:** {prompt[:500]}", file=to_file(data))
+    await interaction.followup.send(
+        f"**Prompt:** {prompt[:500]}\\n**Characters:** {len(prompt):,}",
+        file=to_file(data)
+    )
     await log_use(interaction, "imagine", prompt, "ok", ms_since(t0))
 
 
@@ -241,13 +275,43 @@ auto = app_commands.Group(
 
 
 @auto.command(name="start", description="Post a generated image on a schedule")
-@app_commands.describe(channel="Where to post", prompt="Prompt used for every image", every_minutes="Interval in minutes")
+@app_commands.describe(
+    channel="Where to post",
+    every_minutes="Interval in minutes",
+    prompt="Direct prompt text (max 4,000 characters)",
+    prompt_file="Optional TXT prompt file (max 50,000 characters)"
+)
 async def auto_start(
     interaction: discord.Interaction,
     channel: discord.TextChannel,
-    prompt: app_commands.Range[str, 1, 1000],
     every_minutes: app_commands.Range[int, 1, 10080],
+    prompt: str = None,
+    prompt_file: discord.Attachment = None,
 ):
+    if prompt_file:
+        if not prompt_file.filename.lower().endswith(".txt"):
+            await interaction.response.send_message("Please upload a .txt file.", ephemeral=True)
+            return
+        try:
+            prompt = (await prompt_file.read()).decode("utf-8-sig")
+        except Exception:
+            await interaction.response.send_message("Cannot read TXT file. Please upload UTF-8 text.", ephemeral=True)
+            return
+        if len(prompt) > 50000:
+            await interaction.response.send_message("TXT prompt is too long. Maximum is 50,000 characters.", ephemeral=True)
+            return
+    elif prompt:
+        if len(prompt) > 4000:
+            await interaction.response.send_message("Direct prompt is too long. Maximum is 4,000 characters.", ephemeral=True)
+            return
+    else:
+        await interaction.response.send_message("Enter a prompt or upload a TXT file.", ephemeral=True)
+        return
+
+    if not prompt.strip():
+        await interaction.response.send_message("Prompt is empty.", ephemeral=True)
+        return
+
     if every_minutes < MIN_INTERVAL_MIN:
         await interaction.response.send_message(f"Minimum interval is {MIN_INTERVAL_MIN} minutes.", ephemeral=True)
         return
