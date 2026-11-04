@@ -208,27 +208,16 @@ async def generate_image(prompt: str) -> bytes:
                 async with s.get(item["url"]) as img:
                     return await img.read()
 
-        if POLLINATIONS_TOKEN:
-            url = (
-                "https://gen.pollinations.ai/image/"
-                + urllib.parse.quote(prompt)
-            )
-            params = {
-                "width": 1024,
-                "height": 1024,
-                "key": POLLINATIONS_TOKEN,
-                "nologo": "true",
-            }
-        else:
-            url = (
-                "https://image.pollinations.ai/prompt/"
-                + urllib.parse.quote(prompt)
-            )
-            params = {
-                "width": 1024,
-                "height": 1024,
-                "nologo": "true",
-            }
+       
+        url = (
+            "https://image.pollinations.ai/prompt/"
+            + urllib.parse.quote(prompt)
+        )
+        params = {
+            "width": 1024,
+            "height": 1024,
+            "nologo": "true",
+        }
 
         async with s.get(url, params=params) as r:
             if r.status != 200:
